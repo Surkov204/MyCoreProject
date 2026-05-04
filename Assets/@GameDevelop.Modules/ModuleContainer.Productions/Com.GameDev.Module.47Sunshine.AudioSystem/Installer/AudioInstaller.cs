@@ -1,0 +1,29 @@
+using Zenject;
+
+public class AudioInstaller : MonoInstaller
+{
+    public AudioDatabase audioDatabase;
+    public AudioPlayerRouter audioPlayerRouter;
+
+    public override void InstallBindings()
+    {
+        Container.BindInstance(audioDatabase).AsSingle();
+
+        Container.Bind<AudioDatabaseRuntimeCache>()
+            .AsSingle();
+
+        Container.Bind<AudioPlayerRouter>()
+            .FromInstance(audioPlayerRouter)
+            .AsSingle();
+
+        Container.Bind<IAudioService>()
+            .To<AudioService>()
+            .AsSingle();
+
+        Container.DeclareSignal<PlayAudioSignal>();
+        Container.DeclareSignal<StopAudioSignal>();
+        Container.DeclareSignal<StopAllAudioSignal>();
+
+        Container.BindInterfacesTo<AudioSignalHandler>().AsSingle();
+    }
+}

@@ -1,0 +1,107 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54c8da288124f914796e8efdd3632204, type: 3}
+  m_Name: AudioDatabase
+  m_EditorClassIdentifier: 
+  libraries:
+  - libraryName: SoundFX
+    defaultType: 3
+    allowedTypes: 03000000
+    expanded: 1
+    entries:
+    - guid: 3121661de42a4851b8462271c55603c1
+      id: fire-1
+      displayName: camping-fire
+      type: 3
+      clips:
+      - {fileID: 8300000, guid: 7e95bcc7ff80b49428458b1a77a3c54e, type: 3}
+      volume: 1
+      pitch: 1
+      loop: 1
+      randomClip: 0
+      randomPitch: 0
+      pitchRange: {x: 0.95, y: 1.05}
+      cooldown: 0
+      spatial3D: 1
+      spatialBlend: 1
+      minDistance: 1
+      maxDistance: 6
+      rolloffMode: 0
+  - libraryName: BG
+    defaultType: 0
+    allowedTypes: 03000000
+    expanded: 1
+    entries:
+    - guid: da6173028529425aa27fd56859ca9d1b
+      id: el_son_cubano_music_136290341_nw_prev
+      displayName: El-son-cubano-music-136290341_nw_prev
+      type: 0
+      clips:
+      - {fileID: 8300000, guid: 26ed426028081d6439f38593af9450f6, type: 3}
+      volume: 1
+      pitch: 1
+      loop: 0
+      randomClip: 0
+      randomPitch: 0
+      pitchRange: {x: 0.95, y: 1.05}
+      cooldown: 0
+      spatial3D: 0
+      spatialBlend: 0
+      minDistance: 1
+      maxDistance: 15
+      rolloffMode: 0
+  - libraryName: UI
+    defaultType: 1
+    allowedTypes: 03000000
+    expanded: 1
+    entries:
+    - guid: 9959a884e9fb44eb96ca9021ba1875e4
+      id: game_sound_effect_collect_variation_sound_effect_229949854_nw_prev
+      displayName: Game-sound-effect-collect-variation-sound-effect-229949854_nw_prev
+      type: 1
+      clips:
+      - {fileID: 8300000, guid: f46e2ecb03a1e48468cc11f13bbe03e2, type: 3}
+      volume: 1
+      pitch: 1
+      loop: 0
+      randomClip: 0
+      randomPitch: 0
+      pitchRange: {x: 0.95, y: 1.05}
+      cooldown: 0
+      spatial3D: 0
+      spatialBlend: 1
+      minDistance: 1
+      maxDistance: 15
+      rolloffMode: 0
+    - guid: 3adb394a583c4b99b163463e453b9f3a
+      id: submachine_gun_tommy_gun_01_sound_effect_081996639_nw_prev
+      displayName: Submachine-gun-tommy-gun-01-sound-effect-081996639_nw_prev
+      type: 1
+      clips:
+      - {fileID: 8300000, guid: 52a1ae1821634604982c073f532872e4, type: 3}
+      volume: 1
+      pitch: 1
+      loop: 0
+      randomClip: 0
+      randomPitch: 0
+      pitchRange: {x: 0.95, y: 1.05}
+      cooldown: 0
+      spatial3D: 0
+      spatialBlend: 1
+      minDistance: 1
+      maxDistance: 15
+      rolloffMode: 0
+  - libraryName: VoiceCharacter
+    defaultType: 4
+    allowedTypes: 03000000
+    expanded: 1
+    entries: []

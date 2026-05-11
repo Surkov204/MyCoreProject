@@ -18,25 +18,29 @@ public class AudioService : IAudioService
 
     public AudioHandle Play(AudioEventRef eventRef)
     {
-        return Play(eventRef, null);
+        if (!TryResolvePlayer(eventRef, out AudioEntryData entry, out AudioPlayer player))
+            return AudioHandle.Invalid;
+
+        return player.Play(eventRef, entry);
     }
 
-    public AudioHandle Play(AudioEventRef eventRef, Transform followTarget)
+    public AudioHandle PlayAt(AudioEventRef eventRef, Vector3 position)
     {
-        if (!cache.TryGet(eventRef, out AudioEntryData entry))
+        if (!TryResolvePlayer(eventRef, out AudioEntryData entry, out AudioPlayer player))
             return AudioHandle.Invalid;
 
-        if (!entry.IsValid)
+        return player.PlayAt(eventRef, entry, position);
+    }
+
+    public AudioHandle PlayAttached(AudioEventRef eventRef, Transform target)
+    {
+        if (target == null)
             return AudioHandle.Invalid;
 
-        if (!CanPlay(eventRef, entry))
+        if (!TryResolvePlayer(eventRef, out AudioEntryData entry, out AudioPlayer player))
             return AudioHandle.Invalid;
 
-        AudioPlayer player = router.GetPlayer(entry.type);
-        if (player == null)
-            return AudioHandle.Invalid;
-
-        return player.Play(eventRef, entry, followTarget);
+        return player.PlayAttached(eventRef, entry, target);
     }
 
     public void Stop(AudioHandle handle)
@@ -58,6 +62,31 @@ public class AudioService : IAudioService
     public void StopAll()
     {
         router.StopAll();
+    }
+
+    private bool TryResolvePlayer(
+        AudioEventRef eventRef,
+        out AudioEntryData entry,
+        out AudioPlayer player)
+    {
+        entry = null;
+        player = null;
+
+        if (!eventRef.IsValid)
+            return false;
+
+        if (!cache.TryGet(eventRef, out entry))
+            return false;
+
+        if (entry == null || !entry.IsValid)
+            return false;
+
+        if (!CanPlay(eventRef, entry))
+            return false;
+
+        player = router.GetPlayer(entry.type);
+
+        return player != null;
     }
 
     private bool CanPlay(AudioEventRef eventRef, AudioEntryData entry)

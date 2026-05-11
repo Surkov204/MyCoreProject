@@ -8,32 +8,77 @@ public class AudioPlayer : MonoBehaviour
 
     private readonly Dictionary<string, List<AudioSource>> playingSources = new();
 
-    public AudioHandle Play(AudioEventRef eventRef, AudioEntryData entry, Transform followTarget)
+    public AudioHandle Play(AudioEventRef eventRef, AudioEntryData entry)
     {
-        AudioClip clip = entry.GetClip();
-        if (clip == null)
+        if (!TryPrepareSource(entry, out AudioClip clip, out AudioSource source))
             return AudioHandle.Invalid;
 
-        AudioSource source = sourcePool.Get();
+        source.transform.SetParent(transform);
+        source.transform.localPosition = Vector3.zero;
 
         source.clip = clip;
-        source.volume = entry.volume;
-        source.pitch = entry.GetPitch();
-        source.loop = entry.loop;
-        source.spatialBlend = entry.GetSpatialBlend();
-        source.playOnAwake = false;
+        ApplyEntrySettings(source, entry);
 
-        if (followTarget != null)
-        {
-            source.transform.SetParent(followTarget);
-            source.transform.localPosition = Vector3.zero;
-        }
-        else
-        {
-            source.transform.SetParent(transform);
-            source.transform.localPosition = Vector3.zero;
-        }
+        return PlayPreparedSource(eventRef, entry, source);
+    }
 
+    public AudioHandle PlayAt(AudioEventRef eventRef, AudioEntryData entry, Vector3 position)
+    {
+        if (!TryPrepareSource(entry, out AudioClip clip, out AudioSource source))
+            return AudioHandle.Invalid;
+
+        source.transform.SetParent(transform);
+        source.transform.position = position;
+
+        source.clip = clip;
+        ApplyEntrySettings(source, entry);
+
+        return PlayPreparedSource(eventRef, entry, source);
+    }
+
+    public AudioHandle PlayAttached(AudioEventRef eventRef, AudioEntryData entry, Transform target)
+    {
+        if (target == null)
+            return AudioHandle.Invalid;
+
+        if (!TryPrepareSource(entry, out AudioClip clip, out AudioSource source))
+            return AudioHandle.Invalid;
+
+        source.transform.SetParent(target);
+        source.transform.localPosition = Vector3.zero;
+
+        source.clip = clip;
+        ApplyEntrySettings(source, entry);
+
+        return PlayPreparedSource(eventRef, entry, source);
+    }
+
+    private bool TryPrepareSource(
+        AudioEntryData entry,
+        out AudioClip clip,
+        out AudioSource source)
+    {
+        clip = null;
+        source = null;
+
+        if (entry == null)
+            return false;
+
+        clip = entry.GetClip();
+
+        if (clip == null)
+            return false;
+
+        source = sourcePool.Get();
+
+        return source != null;
+    }
+
+    private AudioHandle PlayPreparedSource(
+        AudioEventRef eventRef,
+        AudioEntryData entry,
+        AudioSource source)
+    {
         Register(eventRef, source);
 
         source.Play();
@@ -44,6 +89,20 @@ public class AudioPlayer : MonoBehaviour
         return new AudioHandle(eventRef, source, this);
     }
 
+    private void ApplyEntrySettings(AudioSource source, AudioEntryData entry)
+    {
+        source.volume = Mathf.Clamp01(entry.volume);
+        source.pitch = entry.GetPitch();
+        source.loop = entry.loop;
+
+        source.spatialBlend = entry.GetSpatialBlend();
+        source.minDistance = entry.GetMinDistance();
+        source.maxDistance = entry.GetMaxDistance();
+        source.rolloffMode = entry.rolloffMode;
+
+        source.playOnAwake = false;
+    }
+
     public void Stop(AudioEventRef eventRef)
     {
         if (!eventRef.IsValid)
@@ -51,12 +110,13 @@ public class AudioPlayer : MonoBehaviour
 
         string key = eventRef.Guid;
 
-        if (!playingSources.TryGetValue(key, out var sources))
+        if (!playingSources.TryGetValue(key, out List<AudioSource> sources))
             return;
 
         for (int i = sources.Count - 1; i >= 0; i--)
         {
             AudioSource source = sources[i];
+
             if (source == null)
                 continue;
 
@@ -74,6 +134,9 @@ public class AudioPlayer : MonoBehaviour
 
         AudioSource source = handle.Source;
 
+        if (source == null)
+            return;
+
         source.Stop();
         Unregister(handle.EventRef, source);
         sourcePool.Release(source);
@@ -81,7 +144,7 @@ public class AudioPlayer : MonoBehaviour
 
     public void StopAll()
     {
-        foreach (var pair in playingSources)
+        foreach (KeyValuePair<string, List<AudioSource>> pair in playingSources)
         {
             foreach (AudioSource source in pair.Value)
             {
@@ -100,7 +163,7 @@ public class AudioPlayer : MonoBehaviour
     {
         string key = eventRef.Guid;
 
-        if (!playingSources.TryGetValue(key, out var sources))
+        if (!playingSources.TryGetValue(key, out List<AudioSource> sources))
         {
             sources = new List<AudioSource>();
             playingSources.Add(key, sources);
@@ -113,7 +176,7 @@ public class AudioPlayer : MonoBehaviour
     {
         string key = eventRef.Guid;
 
-        if (!playingSources.TryGetValue(key, out var sources))
+        if (!playingSources.TryGetValue(key, out List<AudioSource> sources))
             return;
 
         sources.Remove(source);

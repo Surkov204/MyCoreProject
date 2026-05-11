@@ -7,71 +7,157 @@ using UnityEngine;
 public class AudioEventRefDrawer : PropertyDrawer
 {
     private static AudioDatabase cachedDatabase;
-    private static string[] displayOptions;
-    private static string[] guidOptions;
+    private static List<Option> cachedOptions;
+
+    private struct Option
+    {
+        public readonly string Label;
+        public readonly string Guid;
+
+        public Option(string label, string guid)
+        {
+            Label = label;
+            Guid = guid;
+        }
+    }
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
-        EnsureCache();
+        SerializedProperty guidProperty = property.FindPropertyRelative("guid");
 
-        SerializedProperty guidProp = property.FindPropertyRelative("guid");
-
-        if (cachedDatabase == null || displayOptions == null || displayOptions.Length == 0)
+        if (guidProperty == null)
         {
-            EditorGUI.PropertyField(position, guidProp, label);
+            EditorGUI.LabelField(position, label.text, "Invalid AudioEventRef");
             return;
         }
 
-        int currentIndex = 0;
+        EnsureCache();
 
-        for (int i = 0; i < guidOptions.Length; i++)
+        if (cachedOptions == null || cachedOptions.Count == 0)
         {
-            if (guidOptions[i] == guidProp.stringValue)
-            {
-                currentIndex = i;
-                break;
-            }
+            EditorGUI.PropertyField(position, guidProperty, label);
+            return;
         }
 
-        int newIndex = EditorGUI.Popup(position, label.text, currentIndex, displayOptions);
+        string currentGuid = guidProperty.stringValue;
+        string[] labels = BuildLabels(currentGuid, out int currentIndex);
 
-        if (newIndex >= 0 && newIndex < guidOptions.Length)
-            guidProp.stringValue = guidOptions[newIndex];
+        EditorGUI.BeginProperty(position, label, property);
+
+        int selectedIndex = EditorGUI.Popup(position, label.text, currentIndex, labels);
+
+        if (selectedIndex >= 0 && selectedIndex < cachedOptions.Count)
+        {
+            guidProperty.stringValue = cachedOptions[selectedIndex].Guid;
+        }
+
+        EditorGUI.EndProperty();
     }
 
     private static void EnsureCache()
     {
-        if (cachedDatabase != null && displayOptions != null)
+        if (cachedOptions != null)
             return;
 
-        string[] guids = AssetDatabase.FindAssets("t:AudioDatabase");
+        cachedDatabase = FindDatabase();
 
-        if (guids.Length == 0)
-            return;
-
-        string path = AssetDatabase.GUIDToAssetPath(guids[0]);
-        cachedDatabase = AssetDatabase.LoadAssetAtPath<AudioDatabase>(path);
+        cachedOptions = new List<Option>
+        {
+            new Option("None", string.Empty)
+        };
 
         if (cachedDatabase == null)
             return;
 
-        List<string> displays = new();
-        List<string> keys = new();
+        IReadOnlyList<AudioLibraryData> libraries = cachedDatabase.EditorLibraries;
 
-        displays.Add("None");
-        keys.Add("");
+        if (libraries == null)
+            return;
 
-        foreach (AudioLibraryData library in cachedDatabase.EditorLibraries)
+        foreach (AudioLibraryData library in libraries)
         {
+            if (library == null || library.entries == null)
+                continue;
+
             foreach (AudioEntryData entry in library.entries)
             {
-                displays.Add($"{library.libraryName}/{entry.id}");
-                keys.Add(entry.guid);
+                if (entry == null)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(entry.guid))
+                    continue;
+
+                string entryName = ResolveEntryName(entry);
+                string libraryName = string.IsNullOrWhiteSpace(library.libraryName)
+                    ? "(Unnamed Library)"
+                    : library.libraryName;
+
+                string optionLabel = $"{library.defaultType}/{libraryName}/{entryName}";
+
+                cachedOptions.Add(new Option(optionLabel, entry.guid));
+            }
+        }
+    }
+
+    private static string ResolveEntryName(AudioEntryData entry)
+    {
+        if (!string.IsNullOrWhiteSpace(entry.displayName))
+            return entry.displayName;
+
+        if (!string.IsNullOrWhiteSpace(entry.id))
+            return entry.id;
+
+        return "(Unnamed Audio)";
+    }
+
+    private static string[] BuildLabels(string currentGuid, out int currentIndex)
+    {
+        currentIndex = 0;
+
+        bool found = string.IsNullOrEmpty(currentGuid);
+
+        for (int i = 0; i < cachedOptions.Count; i++)
+        {
+            if (cachedOptions[i].Guid == currentGuid)
+            {
+                currentIndex = i;
+                found = true;
+                break;
             }
         }
 
-        displayOptions = displays.ToArray();
-        guidOptions = keys.ToArray();
+        if (!found)
+        {
+            cachedOptions.Insert(
+                1,
+                new Option($"Missing Reference ({currentGuid})", currentGuid));
+
+            currentIndex = 1;
+        }
+
+        string[] labels = new string[cachedOptions.Count];
+
+        for (int i = 0; i < cachedOptions.Count; i++)
+            labels[i] = cachedOptions[i].Label;
+
+        return labels;
+    }
+
+    private static AudioDatabase FindDatabase()
+    {
+        string[] guids = AssetDatabase.FindAssets("t:AudioDatabase");
+
+        if (guids == null || guids.Length == 0)
+            return null;
+
+        string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+        return AssetDatabase.LoadAssetAtPath<AudioDatabase>(path);
+    }
+
+    public static void ClearCache()
+    {
+        cachedDatabase = null;
+        cachedOptions = null;
     }
 }
 #endif

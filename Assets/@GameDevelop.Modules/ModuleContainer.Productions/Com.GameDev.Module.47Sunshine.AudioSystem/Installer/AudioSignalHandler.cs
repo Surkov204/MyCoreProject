@@ -30,10 +30,24 @@ public class AudioSignalHandler : IInitializable, IDisposable
 
     private void OnPlay(PlayAudioSignal signal)
     {
-        if (signal.FollowTarget != null)
-            audioService.Play(signal.EventRef, signal.FollowTarget);
-        else
-            audioService.Play(signal.EventRef);
+        switch (signal.PlayMode)
+        {
+            case AudioPlayMode.Normal:
+                audioService.Play(signal.EventRef);
+                break;
+
+            case AudioPlayMode.AtPosition:
+                audioService.PlayAt(signal.EventRef, signal.Position);
+                break;
+
+            case AudioPlayMode.Attached:
+                audioService.PlayAttached(signal.EventRef, signal.Target);
+                break;
+
+            default:
+                audioService.Play(signal.EventRef);
+                break;
+        }
     }
 
     private void OnStop(StopAudioSignal signal)

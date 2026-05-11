@@ -1,12 +1,15 @@
+using UnityEngine;
 using Zenject;
 
 public class AudioInstaller : MonoInstaller
 {
-    public AudioDatabase audioDatabase;
-    public AudioPlayerRouter audioPlayerRouter;
+    [SerializeField] private AudioDatabase audioDatabase;
+    [SerializeField] private AudioPlayerRouter audioPlayerRouter;
 
     public override void InstallBindings()
     {
+        SignalBusInstaller.Install(Container);
+
         Container.BindInstance(audioDatabase).AsSingle();
 
         Container.Bind<AudioDatabaseRuntimeCache>()

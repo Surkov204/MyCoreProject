@@ -23,7 +23,10 @@ public class AudioEntryData
     public float cooldown;
 
     public bool spatial3D;
-    [Range(0f, 1f)] public float spatialBlend = 0f;
+    [Range(0f, 1f)] public float spatialBlend = 1f;
+    public float minDistance = 1f;
+    public float maxDistance = 15f;
+    public AudioRolloffMode rolloffMode = AudioRolloffMode.Logarithmic;
 
     public bool IsValid => clips != null && clips.Length > 0;
 
@@ -41,13 +44,26 @@ public class AudioEntryData
     public float GetPitch()
     {
         if (!randomPitch)
-            return pitch;
+            return Mathf.Clamp(pitch, 0.1f, 3f);
 
-        return UnityEngine.Random.Range(pitchRange.x, pitchRange.y);
+        float min = Mathf.Min(pitchRange.x, pitchRange.y);
+        float max = Mathf.Max(pitchRange.x, pitchRange.y);
+
+        return Mathf.Clamp(UnityEngine.Random.Range(min, max), 0.1f, 3f);
     }
 
     public float GetSpatialBlend()
     {
-        return spatial3D ? 1f : spatialBlend;
+        return spatial3D ? Mathf.Clamp01(spatialBlend) : 0f;
+    }
+
+    public float GetMinDistance()
+    {
+        return Mathf.Max(0.01f, minDistance);
+    }
+
+    public float GetMaxDistance()
+    {
+        return Mathf.Max(GetMinDistance(), maxDistance);
     }
 }
